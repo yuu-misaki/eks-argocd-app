@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: fastapi
+  labels:
+    app: fastapi-sample
+  name: fastapi-sample
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-sample
+  template:
+    metadata:
+      labels:
+        app: fastapi-sample
+    spec:
+      serviceAccountName: ecr-access # サービスアカウントを指定
+      containers:
+        - name: fastapi-sample
+          image: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<EKS_REPO_NAME>:latest
+          ports:
+            - containerPort: 8080 # ビルドするイメージのポート番号と一致
+          resources:
+            requests: # リソースリクエストを追加
+              cpu: "0.1"
+              memory: "128Mi"
+            limits:
+              cpu: "0.2"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: fastapi
+  name: sample-fastapi-service # platformリポジトリのingress.yamlのservice名と一緒
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080 # containerPortと一致
+      protocol: TCP
+  type: NodePort
+  selector:
+    app: fastapi-sample # Deploymentのlabelsと一致
